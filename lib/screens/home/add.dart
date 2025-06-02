@@ -1,12 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hivelrn/db/data_modal.dart';
 import 'package:hivelrn/db/functions/db_functions.dart';
 
-class AddStudentWidget extends StatelessWidget {
-  final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
-  final _weekController = TextEditingController();
-  final _genderController = TextEditingController();
+class AddStudentWidget extends StatefulWidget {
+  const AddStudentWidget({super.key}); // Fixed: Using super.key pattern
+
+  @override
+  State<AddStudentWidget> createState() => _AddStudentWidgetState();
+}
+
+class _AddStudentWidgetState extends State<AddStudentWidget> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _weekController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+
+@override
+  void initState() {
+    super.initState();
+
+    _nameController.addListener(() {
+      _validateLettersOnly(_nameController, 'Please enter letters');
+    });
+
+    _genderController.addListener(() {
+      _validateLettersOnly(_genderController, 'Please enter letters');
+    });
+
+    _ageController.addListener(() {
+      _validateNumbersOnly(_ageController, 'Please enter numbers');
+    });
+
+    _weekController.addListener(() {
+      _validateNumbersOnly(_weekController, 'Please enter numbers');
+    });
+  }
+
+  void _validateLettersOnly(TextEditingController controller, String message) {
+    final text = controller.text;
+    if (text.isNotEmpty && !RegExp(r'^[a-zA-Z\s]*$').hasMatch(text)) {
+      controller.text = text.substring(0, text.length - 1);
+      controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: controller.text.length),
+      );
+      _showSnackBar(message);
+    }
+  }
+
+  void _validateNumbersOnly(TextEditingController controller, String message) {
+    final text = controller.text;
+    if (text.isNotEmpty && !RegExp(r'^[0-9]*$').hasMatch(text)) {
+      controller.text = text.substring(0, text.length - 1);
+      controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: controller.text.length),
+      );
+      _showSnackBar(message);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    _weekController.dispose();
+    _genderController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +87,7 @@ class AddStudentWidget extends StatelessWidget {
             controller: _nameController,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'name',
+              hintText: 'Name',
             ),
           ),
           const SizedBox(height: 10),
@@ -26,131 +95,70 @@ class AddStudentWidget extends StatelessWidget {
             controller: _ageController,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'age',
+              hintText: 'Age',
             ),
+            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 10),
           TextFormField(
             controller: _weekController,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'week',
+              hintText: 'Week',
             ),
+            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 10),
           TextFormField(
             controller: _genderController,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'gender',
+              hintText: 'Gender',
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           ElevatedButton.icon(
-            onPressed: () {
-              onAddStudentButtonCliked();
-              print('added to box');
-            },
+            onPressed: _handleAddStudent,
             icon: const Icon(Icons.add),
-            label: const Text('add student'),
+            label: const Text('Add Student'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> onAddStudentButtonCliked() async {
-    final _name = _nameController.text.trim();
-    final _age = _ageController.text.trim();
-    final _week = _weekController.text.trim();
-    final _gender = _genderController.text.trim();
+  Future<void> _handleAddStudent() async {
+    if (!mounted) return; // Safety check for widget state
 
-    if (_name.isEmpty || _age.isEmpty || _week.isEmpty || _gender.isEmpty) {
+    final name = _nameController.text.trim();
+    final age = _ageController.text.trim();
+    final week = _weekController.text.trim();
+    final gender = _genderController.text.trim();
+
+    if (name.isEmpty || age.isEmpty || week.isEmpty || gender.isEmpty) {
+      _showSnackBar('Please fill all fields');
       return;
     }
 
-    final _student = StudentModal(
-      name: _name,
-      age: _age,
-      week: _week,
-      gender: _gender,
+    final student = StudentModal(
+      name: name,
+      age: age,
+      week: week,
+      gender: gender,
     );
 
-    addStudent(_student);
-
+    try {
+      await addStudent(student);
+      _showSnackBar('Student added successfully');
+      _clearFields();
+    } catch (e) {
+      _showSnackBar('Error adding student: ${e.toString()}');
+    }
+  }
+  void _clearFields() {
     _nameController.clear();
     _ageController.clear();
     _weekController.clear();
     _genderController.clear();
-  }
-
-  Future<void> editDetails(BuildContext context, StudentModal student, int index) async {
-    _nameController.text = student.name;
-    _ageController.text = student.age;
-    _weekController.text = student.week;
-    _genderController.text = student.gender;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Student"),
-          content: SizedBox(
-            height: 250,
-            child: Column(
-              children: [
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(hintText: 'name'),
-                ),
-                TextField(
-                  controller: _ageController,
-                  decoration: const InputDecoration(hintText: 'age'),
-                ),
-                TextField(
-                  controller: _weekController,
-                  decoration: const InputDecoration(hintText: 'week'),
-                ),
-                TextField(
-                  controller: _genderController,
-                  decoration: const InputDecoration(hintText: 'gender'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _nameController.clear();
-                _ageController.clear();
-                _weekController.clear();
-                _genderController.clear();
-              },
-              child: const Text('Cancel'),
-            ),
-            const SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: () async {
-                student.name = _nameController.text;
-                student.age = _ageController.text;
-                student.week = _weekController.text;
-                student.gender = _genderController.text;
-
-                await updateStudent(index, student);
-
-                _nameController.clear();
-                _ageController.clear();
-                _weekController.clear();
-                _genderController.clear();
-
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
   }
 }

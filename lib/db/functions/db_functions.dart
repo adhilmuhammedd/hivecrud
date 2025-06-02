@@ -1,34 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:hivelrn/db/data_modal.dart';
+import '../data_modal.dart';
 
-ValueNotifier<List<StudentModal>>studentListNotifier =ValueNotifier([]);
+ValueNotifier<List<StudentModal>> studentListNotifier = ValueNotifier([]);
 
-Future<void> addStudent(StudentModal value) async{
-  final studentDB = await Hive.openBox<StudentModal>('student_db');
-  final _id = await studentDB.add(value);
-  value.id = _id;
-  
-  studentListNotifier.value.add(value);
-  studentListNotifier.notifyListeners();
+Future<void> addStudent(StudentModal student) async {
+  final box = await Hive.openBox<StudentModal>('student_db');
+  int key = await box.add(student);
+  student.id = key;
+  await box.put(key, student); // Update object with key as id
+  getAllStudents();
 }
 
-Future<void> getAllStudent()async{
-  final studentDB = await Hive.openBox<StudentModal>('student_db');
+Future<void> getAllStudents() async {
+  final box = await Hive.openBox<StudentModal>('student_db');
   studentListNotifier.value.clear();
-
-  studentListNotifier.value.addAll(studentDB.values);
+  studentListNotifier.value.addAll(box.values.toList());
   studentListNotifier.notifyListeners();
 }
 
-Future<void> deleteStudent(int id) async {
- final studentDB = await Hive.openBox<StudentModal>('student_db');
- await studentDB.delete(id);
- getAllStudent();
+Future<void> deleteStudent(int key) async {
+  final box = await Hive.openBox<StudentModal>('student_db');
+  await box.delete(key);
+  getAllStudents();
 }
 
-Future<void> updateStudent(int index, StudentModal value) async {
-  final studentDB = await Hive.openBox<StudentModal>('student_db');
-  await studentDB.putAt(index, value);
-  getAllStudent(); 
+Future<void> updateStudent(int key, StudentModal student) async {
+  final box = await Hive.openBox<StudentModal>('student_db');
+  await box.put(key, student);
+  getAllStudents();
 }

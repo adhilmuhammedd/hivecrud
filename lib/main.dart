@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import 'package:hivelrn/db/data_modal.dart';
-import 'package:hivelrn/screens/home/homescreen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hivelrn/db/data_modal.dart'; // Update with your correct import
+import 'package:hivelrn/screens/home/homescreen.dart'; // Your app's starting screen
 
-Future<void> main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive
   await Hive.initFlutter();
-  if(!Hive.isAdapterRegistered(StudentModalAdapter().typeId))
-  {
-    Hive.registerAdapter(StudentModalAdapter());
-  }
-  runApp(MaterialApp(debugShowCheckedModeBanner: false,
-  home: Addall(),
-  ));
+
+  // Register the adapter
+  Hive.registerAdapter(StudentModalAdapter());
+
+  runApp(const MyApp());
 }
 
-extension on HiveInterface {
-  initFlutter() {}
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Addall(), // Your home widget
+      debugShowCheckedModeBanner: false,
+    );
+  }
 }

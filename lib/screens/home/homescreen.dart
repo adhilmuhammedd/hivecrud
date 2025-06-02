@@ -6,20 +6,20 @@ import 'package:hivelrn/screens/home/list.dart';
 class Addall extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    getAllStudent();
+    getAllStudents();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: (Colors.blue),
-        title: Center(child: Text('add student')),
+        title: const Center(child: Text('Add Student')),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            AddStudentWidget(),
-            Expanded(child: ListStudentWidget()),
-          ],
+          child: Column(
+            children: [
+              const AddStudentWidget(),
+              Expanded(child: ListStudentWidget()),
+            ],
+          ),
         ),
-      ),
     );
   }
 }
