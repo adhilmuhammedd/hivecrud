@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 part 'data_modal.g.dart';
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 1) 
 class StudentModal {
   @HiveField(0)
   int? id;
